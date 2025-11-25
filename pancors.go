@@ -32,6 +32,18 @@ func (t corsTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 func handleProxy(w http.ResponseWriter, r *http.Request, origin string, credentials string) {
+	// Handle OPTIONS requests directly
+	if r.Method == "OPTIONS" {
+		// Set CORS headers for OPTIONS preflight
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Credentials", credentials)
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers")
+		w.Header().Set("Access-Control-Max-Age", "86400")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	// Check for the User-Agent header
 	if r.Header.Get("User-Agent") == "" {
 		http.Error(w, "Missing User-Agent header", http.StatusBadRequest)
