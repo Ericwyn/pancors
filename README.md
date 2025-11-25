@@ -4,7 +4,12 @@ We all know how it feels when you want to fetch something and CORS screws it all
 
 **Meet PanCORS:** super light-weight CORS-anywhere proxy implemented in just a few lines of Go code.
 
-## Installation
+## Installation By Build
+1. Clone the repo
+2. `go build -o pancors ./cmd/pancors/main.go`
+3. `./pancors`
+
+## Installation By Docker
 
 From DockerHub:
 
