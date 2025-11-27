@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 )
 
 type corsTransport struct {
@@ -28,6 +29,14 @@ func (t corsTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	res.Header.Set("Access-Control-Allow-Origin", t.origin)
 	res.Header.Set("Access-Control-Allow-Credentials", t.credentials)
 
+	// Ensure Mcp-Session-Id is exposed in CORS headers
+	exposeHeaders := res.Header.Get("Access-Control-Expose-Headers")
+	if exposeHeaders == "" {
+		res.Header.Set("Access-Control-Expose-Headers", "Mcp-Session-Id")
+	} else if !containsHeader(exposeHeaders, "Mcp-Session-Id") {
+		res.Header.Set("Access-Control-Expose-Headers", exposeHeaders+", Mcp-Session-Id")
+	}
+
 	return res, nil
 }
 
@@ -38,7 +47,7 @@ func handleProxy(w http.ResponseWriter, r *http.Request, origin string, credenti
 		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Credentials", credentials)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Mcp-Session-Id")
 		w.Header().Set("Access-Control-Max-Age", "86400")
 		w.WriteHeader(http.StatusOK)
 		return
@@ -89,7 +98,7 @@ func HandleProxy(w http.ResponseWriter, r *http.Request) {
 	handleProxy(w, r, "*", "true")
 }
 
-// HandleProxyFromHosts is a handler which passes requests only from specified to the host
+// HandleProxyWith is a handler which passes requests only from specified to the host
 func HandleProxyWith(origin string, credentials string) func(http.ResponseWriter, *http.Request) {
 	if !(credentials == "true" || credentials == "false") {
 		log.Panicln("Access-Control-Allow-Credentials can only be 'true' or 'false'")
@@ -97,4 +106,14 @@ func HandleProxyWith(origin string, credentials string) func(http.ResponseWriter
 	return func(w http.ResponseWriter, r *http.Request) {
 		handleProxy(w, r, origin, credentials)
 	}
+}
+
+// containsHeader checks if a header name exists in a comma-separated list of headers
+func containsHeader(headers, header string) bool {
+	for _, h := range strings.Split(headers, ",") {
+		if strings.TrimSpace(h) == header {
+			return true
+		}
+	}
+	return false
 }
