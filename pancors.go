@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
 )
 
@@ -116,4 +117,41 @@ func containsHeader(headers, header string) bool {
 		}
 	}
 	return false
+}
+
+func getAllowOrigin() string {
+	if origin, ok := os.LookupEnv("ALLOW_ORIGIN"); ok {
+		return origin
+	}
+	return "*"
+}
+
+func getAllowCredentials() string {
+	if credentials, ok := os.LookupEnv("ALLOW_CREDENTIALS"); ok {
+		return credentials
+	}
+	return "true"
+}
+
+func GetListenPort(portFlag string) string {
+	// Command line flag takes precedence over environment variable
+	if portFlag != "" {
+		// Ensure port starts with colon
+		if portFlag[0] != ':' {
+			return ":" + portFlag
+		}
+		return portFlag
+	}
+
+	if port, ok := os.LookupEnv("PORT"); ok {
+		return ":" + port
+	}
+	return ":8080"
+}
+
+func RunPancorsServ(port string) {
+	http.HandleFunc("/", HandleProxyWith(getAllowOrigin(), getAllowCredentials()))
+
+	log.Printf("PanCORS started listening on %s\n", port)
+	log.Fatal(http.ListenAndServe(port, nil))
 }
