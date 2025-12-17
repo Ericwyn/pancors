@@ -1,3 +1,3 @@
-module github.com/michaljanocko/pancors
+module github.com/Ericwyn/pancors
 
 go 1.16
