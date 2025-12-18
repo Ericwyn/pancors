@@ -80,11 +80,14 @@ func handleProxy(w http.ResponseWriter, r *http.Request, origin string, credenti
 		return
 	}
 
+	targetOrigin := urlParsed.Scheme + "://" + urlParsed.Hostname()
+
 	// Setup for the proxy
 	proxy := httputil.ReverseProxy{
 		Director: func(r *http.Request) {
 			r.URL = urlParsed
 			r.Host = urlParsed.Host
+			r.Header.Set("Origin", targetOrigin)
 		},
 		Transport: corsTransport{referer, origin, credentials},
 	}
